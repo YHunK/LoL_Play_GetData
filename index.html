@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Riot 타임라인 추출기 v4</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    padding: 2rem;
+    width: 100%;
+    max-width: 700px;
+  }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+  .version { font-size: 11px; color: #aaa; margin-bottom: 6px; }
+  .sub { font-size: 13px; color: #888; margin-bottom: 1.5rem; line-height: 1.6; }
+  label { font-size: 12px; color: #666; display: block; margin-bottom: 5px; }
+  input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    color: #1a1a1a;
+  }
+  input[type="text"]:focus { border-color: #378ADD; }
+  .parsed-id {
+    font-size: 12px;
+    color: #1a7a3a;
+    background: #f0fff4;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  button.primary {
+    width: 100%;
+    padding: 10px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button.primary:hover { background: #333; }
+  button.primary:disabled { background: #aaa; cursor: not-allowed; }
+  .progress { height: 4px; background: #eee; border-radius: 2px; margin: 12px 0; overflow: hidden; }
+  .progress-fill { height: 4px; background: #378ADD; border-radius: 2px; width: 0%; transition: width 0.4s; }
+  .status {
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #555;
+    margin: 10px 0;
+    line-height: 1.6;
+    min-height: 48px;
+  }
+  .status.error { background: #fff0f0; color: #c0392b; }
+  .status.success { background: #f0fff4; color: #1a7a3a; }
+  .section-title { font-size: 12px; font-weight: 500; color: #666; margin: 16px 0 8px; display: none; }
+  .participant-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 4px; display: none; }
+  .participant-table th { background: #f4f4f4; padding: 6px 8px; text-align: left; font-weight: 500; color: #555; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
+  .participant-table td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; color: #333; white-space: nowrap; }
+  .participant-table tr.blue td:first-child { border-left: 3px solid #378ADD; }
+  .participant-table tr.red td:first-child { border-left: 3px solid #e74c3c; }
+  .tag-you { background: #fffbe6; color: #b8860b; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: 500; }
+  .win-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; }
+  .win-badge.win { background: #e8f5e9; color: #2e7d32; }
+  .win-badge.loss { background: #fce4e4; color: #c62828; }
+  pre {
+    font-size: 11px;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    background: #f4f4f4;
+    padding: 12px;
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 260px;
+    color: #444;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-top: 4px;
+    display: none;
+  }
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btn-copy {
+    flex: 1;
+    min-width: 140px;
+    padding: 9px 12px;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: none;
+    text-align: center;
+  }
+  .btn-copy:hover { background: #f0f0f0; }
+  .divider { border: none; border-top: 1px solid #eee; margin: 1.5rem 0; }
+  .how-to { font-size: 12px; color: #888; line-height: 1.8; }
+  .how-to strong { color: #555; font-weight: 500; }
+  .step { display: flex; gap: 10px; margin-bottom: 6px; align-items: flex-start; }
+  .step-num { min-width: 20px; height: 20px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #666; flex-shrink: 0; margin-top: 1px; }
+  .url-hint { font-size: 11px; color: #aaa; margin-top: -10px; margin-bottom: 14px; line-height: 1.5; }
+  .change-log { font-size: 11px; color: #999; background: #fafafa; border-radius: 6px; padding: 8px 12px; margin-bottom: 1.5rem; line-height: 1.8; border: 1px solid #eee; }
+  .change-log strong { color: #666; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Riot 타임라인 추출기</h1>
+  <p class="sub">your.gg / op.gg URL 또는 Match ID를 입력하면 분석에 최적화된 텍스트를 추출합니다.</p>
+
+  <label>Match URL 또는 Match ID</label>
+  <input type="text" id="urlOrId"
+    placeholder="https://your.gg/kr/match/8155146484 또는 KR_8155146484"
+    oninput="parseInput(this.value)">
+  <div class="parsed-id" id="parsedId"></div>
+  <div class="url-hint">지원 형식: your.gg URL · op.gg URL · KR_xxxxxxx 형식 직접 입력</div>
+
+  <label>API Key</label>
+  <input type="text" id="apiKey" placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+
+  <label>내 소환사명 (입력하면 내 상세 정보 및 핵심 지표 별도 정리)</label>
+  <input type="text" id="myName" placeholder="예: 깜 북">
+
+  <button class="primary" id="btn" onclick="run()">추출하기</button>
+
+  <div class="progress"><div class="progress-fill" id="prog"></div></div>
+  <div class="status" id="status">URL 또는 Match ID와 API Key를 입력하고 버튼을 누르세요.</div>
+
+  <div class="section-title" id="ptitle">참여자 목록</div>
+  <table class="participant-table" id="ptable">
+    <thead>
+      <tr>
+        <th>P#</th><th>소환사명</th><th>챔피언</th><th>팀</th><th>포지션</th>
+        <th>KDA</th><th>CS/분</th><th>골드</th><th>결과</th>
+      </tr>
+    </thead>
+    <tbody id="ptbody"></tbody>
+  </table>
+
+  <div class="section-title" id="prevtitle">미리보기 (앞부분 1200자)</div>
+  <pre id="preview"></pre>
+
+  <div class="btn-row">
+    <button class="btn-copy" id="copyMatchBtn"  onclick="copyText(matchText,   'copyMatchBtn',   '매치 기본정보 복사')">매치 기본정보 복사</button>
+    <button class="btn-copy" id="copyTimelineBtn" onclick="copyText(timelineText,'copyTimelineBtn','타임라인 복사')">타임라인 복사</button>
+    <button class="btn-copy" id="copyAllBtn"    onclick="copyText(fullText,    'copyAllBtn',    '전체 복사')">전체 복사</button>
+  </div>
+
+  <hr class="divider">
+
+  <div class="how-to">
+    <div class="step"><div class="step-num">1</div><div>your.gg 또는 op.gg 매치 URL을 그대로 붙여넣기</div></div>
+    <div class="step"><div class="step-num">2</div><div>추출 완료 후 원하는 버튼으로 복사</div></div>
+    <div class="step"><div class="step-num">3</div><div>Claude 채팅에 붙여넣기 후 <strong>"위 데이터 분석해줘"</strong></div></div>
+    <div class="step"><div class="step-num">*</div><div>개발용 API Key는 <strong>24시간마다 갱신</strong> 필요 (developer.riotgames.com)</div></div>
+  </div>
+</div>
+
+<script>
+let matchText = '';
+let timelineText = '';
+let fullText = '';
+let pMap = {};
+
+/* ── 챔피언 ID → 이름 변환 테이블 (주요 챔피언) ── */
+const CHAMP_ID = {
+  1:'Annie',2:'Olaf',3:'Galio',4:'TwistedFate',5:'XinZhao',6:'Urgot',7:'LeBlanc',8:'Vladimir',
+  9:'FiddleSticks',10:'Kayle',11:'MasterYi',12:'Alistar',13:'Ryze',14:'Sion',15:'Sivir',16:'Soraka',
+  17:'Teemo',18:'Tristana',19:'Warwick',20:'Nunu',21:'MissFortune',22:'Ashe',23:'Tryndamere',
+  24:'Jax',25:'Morgana',26:'Zilean',27:'Singed',28:'Evelynn',29:'Twitch',30:'Karthus',
+  31:'Cho\'Gath',32:'Amumu',33:'Rammus',34:'Anivia',35:'Shaco',36:'DrMundo',37:'Sona',
+  38:'Kassadin',39:'Irelia',40:'Janna',41:'Gangplank',42:'Corki',43:'Karma',44:'Taric',
+  45:'Veigar',48:'Trundle',50:'Swain',51:'Caitlyn',53:'Blitzcrank',54:'Malphite',
+  55:'Katarina',56:'Nocturne',57:'Maokai',58:'Renekton',59:'JarvanIV',60:'Elise',
+  61:'Orianna',62:'MonkeyKing',63:'Brand',64:'LeeSin',67:'Vayne',68:'Rumble',69:'Cassiopeia',
+  72:'Skarner',74:'Heimerdinger',75:'Nasus',76:'Nidalee',77:'Udyr',78:'Poppy',79:'Gragas',
+  80:'Pantheon',81:'Ezreal',82:'Mordekaiser',83:'Yorick',84:'Akali',85:'Kennen',86:'Garen',
+  89:'Leona',90:'Malzahar',91:'Talon',92:'Riven',96:'KogMaw',98:'Shen',99:'Lux',
+  101:'Xerath',102:'Shyvana',103:'Ahri',104:'Graves',105:'Fizz',106:'Volibear',107:'Rengar',
+  110:'Varus',111:'Nautilus',112:'Viktor',113:'Sejuani',114:'Fiora',115:'Ziggs',117:'Lulu',
+  119:'Draven',120:'Hecarim',121:'Khazix',122:'Darius',126:'Jayce',127:'Lissandra',
+  131:'Diana',133:'Quinn',134:'Syndra',136:'AurelionSol',141:'Kayn',142:'Zoe',
+  143:'Zyra',145:'Kaisa',147:'Seraphine',150:'Gnar',154:'Zac',157:'Yasuo',
+  161:'Velkoz',163:'Taliyah',164:'Camille',166:'Akshan',200:'BelVeth',201:'Braum',
+  202:'Jhin',203:'Kindred',204:'Gwen',221:'Zeri',222:'Jinx',223:'TahmKench',
+  234:'Viego',235:'Senna',236:'Lucian',238:'Zed',240:'Kled',245:'Ekko',
+  246:'Qiyana',254:'Vi',266:'Aatrox',267:'Nami',268:'Azir',350:'Yuumi',
+  360:'Samira',412:'Thresh',420:'Illaoi',421:'RekSai',427:'Ivern',429:'Kalista',
+  432:'BardKnock',516:'Ornn',517:'Sylas',518:'Neeko',523:'Aphelios',526:'Rell',
+  555:'Pyke',711:'Vex',777:'Yone',875:'Sett',876:'Lillia',887:'Gwen',888:'Renata',
+  895:'Nilah',897:'KSante',902:'Milio',910:'Hwei',950:'Naafiri',960:'Smolder',
+  233:'Briar',893:'Aurora',99:'Lux',19:'Warwick',
+};
+function champName(id) { return CHAMP_ID[id] || `ID:${id}`; }
+
+/* ── 맵 구역 분류 (킬 위치 좌표 → 구역명) ── */
+function classifyZone(x, y, myTeamId) {
+  if (!x || !y) return '알수없음';
+  const nx = x / 14870, ny = y / 14870;
+  let blue = myTeamId === 100 ? '아군' : (myTeamId === 200 ? '적군' : '블루');
+  let red = myTeamId === 200 ? '아군' : (myTeamId === 100 ? '적군' : '레드');
+
+  if (nx < 0.15 && ny > 0.85) return `${blue} 넥서스`;
+  if (nx > 0.85 && ny < 0.15) return `${red} 넥서스`;
+  if (nx < 0.25 && ny > 0.6)  return `${blue} 베이스`;
+  if (nx > 0.75 && ny < 0.4)  return `${red} 베이스`;
+  if (nx < 0.2)                return `탑 라인(${blue} 쪽)`;
+  if (ny < 0.2)                return `봇 라인(${red} 쪽)`;
+  if (nx > 0.8)                return `탑 라인(${red} 쪽)`;
+  if (ny > 0.8)                return `봇 라인(${blue} 쪽)`;
+  if (nx < 0.35 && ny > 0.55) return '탑 라인';
+  if (nx > 0.65 && ny < 0.45) return '봇 라인';
+  if (Math.abs(nx - ny) < 0.15 && nx > 0.3 && nx < 0.7) return '미드 라인';
+  if (nx < 0.4 && ny < 0.5)   return `${blue} 정글(탑 쪽)`;
+  if (nx < 0.5 && ny < 0.4)   return `${blue} 정글(봇 쪽)`;
+  if (nx > 0.6 && ny > 0.5)   return `${red} 정글(봇 쪽)`;
+  if (nx > 0.5 && ny > 0.6)   return `${red} 정글(탑 쪽)`;
+  if (nx > 0.35 && nx < 0.65 && ny > 0.35 && ny < 0.65) return '강 / 오브젝트 (중립)';
+  return '정글 (중립)';
+}
+
+/* ── 코어 아이템 완성 판단 (주요 원딜 1코어) ── */
+const CORE_ITEMS = {
+  3508:'에센스 리버',3031:'인피니티 엣지',3078:'트리니티 포스',
+  6672:'크라켄 슬레이어',6675:'나잠 칼',6676:'게일포스',6671:'위치스 엔드',
+  3153:'빌모어의 칼날',6693:'도프 블레이드',3033:'모탈 리마인더',
+  3036:'라스트 위스퍼',6694:'세릴다의 원한',2517:'끝없는 굶주림',
+  3161:'쇼진의 창',6632:'팬텀 댄서',
+};
+function isCoreItem(id) { return !!CORE_ITEMS[id]; }
+
+/* ── 트링킷 ID ── */
+const TRINKET_YELLOW = 3340;
+const TRINKET_BLUE   = 3363;
+const TRINKET_RED    = 3364;
+
+function parseMatchId(raw) {
+  raw = raw.trim();
+  let m = raw.match(/\/match\/(\d+)/);
+  if (m) return 'KR_' + m[1];
+  m = raw.match(/matchId[=_]([A-Z]+_\d+)/i);
+  if (m) return m[1].toUpperCase();
+  m = raw.match(/^([A-Z]+_\d+)$/i);
+  if (m) return m[1].toUpperCase();
+  m = raw.match(/^(\d{8,})$/);
+  if (m) return 'KR_' + m[1];
+  return null;
+}
+function parseInput(val) {
+  const id = parseMatchId(val);
+  const el = document.getElementById('parsedId');
+  if (id) { el.textContent = 'Match ID 인식: ' + id; el.style.display = 'block'; }
+  else el.style.display = 'none';
+}
+function setProg(p) { document.getElementById('prog').style.width = p + '%'; }
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (type ? ' ' + type : '');
+}
+function fmt(ms) {
+  const mm = String(Math.floor(ms / 60000)).padStart(2, '0');
+  const ss = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+function pLabel(id) {
+  const p = pMap[id];
+  return p ? `${p.name}(${p.champion})` : (id === 0 ? '미니언/기타' : `P${id}`);
+}
+function getRegion(matchId) {
+  if (/^KR/i.test(matchId)) return 'asia';
+  if (/^NA/i.test(matchId)) return 'americas';
+  if (/^EUW|^EUN/i.test(matchId)) return 'europe';
+  if (/^JP/i.test(matchId)) return 'asia';
+  return 'asia';
+}
+
+async function run() {
+  const raw    = document.getElementById('urlOrId').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const myName = document.getElementById('myName').value.trim().toLowerCase();
+  const btn    = document.getElementById('btn');
+
+  const matchId = parseMatchId(raw);
+  if (!matchId) { setStatus('URL 또는 Match ID를 인식할 수 없습니다.', 'error'); return; }
+  if (!apiKey)  { setStatus('API Key를 입력하세요.', 'error'); return; }
+
+  btn.disabled = true;
+  ['copyMatchBtn','copyTimelineBtn','copyAllBtn'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('ptable').style.display = 'none';
+  document.getElementById('ptitle').style.display = 'none';
+  document.getElementById('prevtitle').style.display = 'none';
+  matchText = ''; timelineText = ''; fullText = ''; pMap = {};
+  setProg(5);
+
+  const region = getRegion(matchId);
+  const base = `https://${region}.api.riotgames.com`;
+
+  /* ── 1. 매치 기본정보 ── */
+  setStatus(`매치 기본정보 조회 중... (${matchId})`);
+  let md;
+  try {
+    const res = await fetch(`${base}/lol/match/v5/matches/${matchId}?api_key=${apiKey}`);
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(`HTTP ${res.status}: ${e?.status?.message||'오류'}`); }
+    md = await res.json();
+  } catch(e) { setStatus('매치 기본정보 조회 실패: ' + e.message, 'error'); btn.disabled=false; setProg(0); return; }
+
+  setProg(35);
+
+  const participants = md.info.participants || [];
+  const gameDuration = md.info.gameDuration;
+  const durationStr  = `${Math.floor(gameDuration/60)}분 ${gameDuration%60}초`;
+  const gameMode     = md.info.gameMode;
+  const gameVersion  = md.info.gameVersion;
+
+  participants.forEach((p, i) => {
+    pMap[i+1] = {
+      name: p.summonerName || p.riotIdGameName || `P${i+1}`,
+      champion: p.championName,
+      team: p.teamId === 100 ? '블루' : '레드',
+      teamId: p.teamId,
+      position: p.teamPosition || p.individualPosition || '-',
+      kills: p.kills, deaths: p.deaths, assists: p.assists,
+      cs: p.totalMinionsKilled + p.neutralMinionsKilled,
+      csPerMin: ((p.totalMinionsKilled + p.neutralMinionsKilled) / (gameDuration/60)).toFixed(1),
+      gold: p.goldEarned,
+      goldSpent: p.goldSpent || 0,
+      dmgToChamp: p.totalDamageDealtToChampions,
+      dmgTaken: p.totalDamageTaken,
+      vision: p.visionScore,
+      visionPerMin: (p.visionScore / (gameDuration/60)).toFixed(2),
+      wardsPlaced: p.wardsPlaced,
+      wardsKilled: p.wardsKilled,
+      controlWardsBought: p.visionWardsBoughtInGame || 0,
+      detectorWardsPlaced: p.detectorWardsPlaced || 0,
+      dmgPhysical: p.physicalDamageDealtToChampions || 0,
+      dmgMagic: p.magicDamageDealtToChampions || 0,
+      dmgTrue: p.trueDamageDealtToChampions || 0,
+      minionsKilled: p.totalMinionsKilled || 0,
+      jungleKilled: p.neutralMinionsKilled || 0,
+      firstBlood: p.firstBloodKill || false,
+      firstTower: p.firstTowerKill || false,
+      turretKills: p.turretKills || 0,
+      inhibitorKills: p.inhibitorKills || 0,
+      pentaKills: p.pentaKills || 0,
+      quadraKills: p.quadraKills || 0,
+      tripleKills: p.tripleKills || 0,
+      doubleKills: p.doubleKills || 0,
+      items: [p.item0,p.item1,p.item2,p.item3,p.item4,p.item5,p.item6].filter(x=>x>0),
+      win: p.win,
+      level: p.champLevel,
+      kp: '-',
+      dpm: Math.round(p.totalDamageDealtToChampions / (gameDuration/60)),
+      dealRatio: p.totalDamageTaken > 0 ? (p.totalDamageDealtToChampions / p.totalDamageTaken).toFixed(2) : 'N/A',
+    };
+  });
+
+  const blueKills = participants.filter(p=>p.teamId===100).reduce((s,p)=>s+p.kills,0);
+  const redKills  = participants.filter(p=>p.teamId===200).reduce((s,p)=>s+p.kills,0);
+  Object.values(pMap).forEach(p => {
+    const teamKills = p.teamId === 100 ? blueKills : redKills;
+    p.kp = teamKills > 0 ? Math.round((p.kills + p.assists) / teamKills * 100) + '%' : '0%';
+  });
+
+  const teams    = md.info.teams || [];
+  const blueTeam = teams.find(t=>t.teamId===100) || {};
+  const redTeam  = teams.find(t=>t.teamId===200) || {};
+
+  /* 참여자 테이블 렌더링 */
+  const tbody = document.getElementById('ptbody');
+  tbody.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const p = pMap[i]; if (!p) continue;
+    const isMe = myName && p.name.toLowerCase().includes(myName);
+    const tr = document.createElement('tr');
+    tr.className = p.team === '블루' ? 'blue' : 'red';
+    tr.innerHTML = `
+      <td>P${i}</td>
+      <td>${p.name}${isMe ? '<span class="tag-you">나</span>' : ''}</td>
+      <td>${p.champion}</td>
+      <td style="color:${p.team==='블루'?'#185FA5':'#c0392b'};font-weight:500">${p.team}</td>
+      <td>${p.position}</td>
+      <td>${p.kills}/${p.deaths}/${p.assists}</td>
+      <td>${p.csPerMin}</td>
+      <td>${p.gold.toLocaleString()}</td>
+      <td><span class="win-badge ${p.win?'win':'loss'}">${p.win?'승':'패'}</span></td>
+    `;
+    tbody.appendChild(tr);
+  }
+  document.getElementById('ptable').style.display = 'table';
+  document.getElementById('ptitle').style.display = 'block';
+
+  /* 라인 매치업 */
+  const posOrder = ['TOP','JUNGLE','MIDDLE','BOTTOM','UTILITY'];
+  const posLabel = { TOP:'TOP', JUNGLE:'JG', MIDDLE:'MID', BOTTOM:'BOT', UTILITY:'SUP' };
+  let blueLineScore = 0, redLineScore = 0;
+  const matchupLines = posOrder.map(pos => {
+    const bE = Object.entries(pMap).find(([,p]) => p.teamId===100 && p.position===pos);
+    const rE = Object.entries(pMap).find(([,p]) => p.teamId===200 && p.position===pos);
+    if (!bE || !rE) return `${posLabel[pos]||pos}: 매치업 불명확`;
+    const b = bE[1], r = rE[1];
+    const metrics = [
+      [b.gold, r.gold],
+      [b.cs, r.cs],
+      [b.dmgToChamp, r.dmgToChamp],
+      [b.kills + b.assists, r.kills + r.assists],
+    ];
+    let blueRatio = 0, cnt = 0;
+    metrics.forEach(([bv,rv]) => { const t=bv+rv; if(t>0){blueRatio+=bv/t;cnt++;} });
+    const ba = cnt > 0 ? Math.round(blueRatio/cnt*10) : 5;
+    const ra = 10 - ba;
+    blueLineScore += ba; redLineScore += ra;
+    return `${posLabel[pos]||pos}: ${b.name}(${b.champion}) [${ba}] vs ${r.name}(${r.champion}) [${ra}]`;
+  });
+  const matchupStr = matchupLines.join('\n') + `\n팀 라인 우위 합산: 블루 ${blueLineScore} vs 레드 ${redLineScore}`;
+
+  /* 밴 정보 — 챔피언 이름 변환 */
+  const blueBans = (blueTeam.bans||[]).map(b=> b.championId === -1 ? `없음(픽순서:${b.pickTurn})` : `${champName(b.championId)}(픽순서:${b.pickTurn})`).join(', ') || '없음';
+  const redBans  = (redTeam.bans||[]).map(b=> b.championId === -1 ? `없음(픽순서:${b.pickTurn})` : `${champName(b.championId)}(픽순서:${b.pickTurn})`).join(', ')  || '없음';
+
+  /* 팀 오브젝트 */
+  const teamStr =
+`블루팀: 승리=${blueTeam.win?'예':'아니오'} | 타워=${blueTeam.objectives?.tower?.kills||0} | 억제기=${blueTeam.objectives?.inhibitor?.kills||0} | 드래곤=${blueTeam.objectives?.dragon?.kills||0} | 바론=${blueTeam.objectives?.baron?.kills||0} | 전령=${blueTeam.objectives?.riftHerald?.kills||0} | 유충=${blueTeam.objectives?.horde?.kills||0}
+레드팀: 승리=${redTeam.win?'예':'아니오'} | 타워=${redTeam.objectives?.tower?.kills||0} | 억제기=${redTeam.objectives?.inhibitor?.kills||0} | 드래곤=${redTeam.objectives?.dragon?.kills||0} | 바론=${redTeam.objectives?.baron?.kills||0} | 전령=${redTeam.objectives?.riftHerald?.kills||0} | 유충=${redTeam.objectives?.horde?.kills||0}`;
+
+  /* 내 섹션 */
+  let mySection = '';
+  let myPid = null;
+  if (myName) {
+    const me = Object.entries(pMap).find(([,p]) => p.name.toLowerCase().includes(myName));
+    if (me) {
+      const [pid, p] = me;
+      myPid = parseInt(pid);
+      mySection = `
+=== 내 플레이 전체 정리 (${p.name} / P${pid}) ===
+챔피언: ${p.champion} | 팀: ${p.team} | 포지션: ${p.position} | 레벨: ${p.level} | 결과: ${p.win?'승리':'패배'}
+퍼스트 블러드: ${p.firstBlood?'예':'아니오'} | 퍼스트 타워: ${p.firstTower?'예':'아니오'}
+아이템: [${p.items.join(', ')}]
+
+[KDA / 킬관여율]
+킬: ${p.kills} / 데스: ${p.deaths} / 어시스트: ${p.assists} | KDA: ${((p.kills+p.assists)/Math.max(p.deaths,1)).toFixed(2)} | 킬관여율: ${p.kp}
+멀티킬: 더블 ${p.doubleKills} / 트리플 ${p.tripleKills} / 쿼드라 ${p.quadraKills} / 펜타 ${p.pentaKills}
+
+[딜량]
+챔피언딜: ${p.dmgToChamp.toLocaleString()} | 물리: ${p.dmgPhysical.toLocaleString()} | 마법: ${p.dmgMagic.toLocaleString()} | 고정: ${p.dmgTrue.toLocaleString()}
+받은 피해: ${p.dmgTaken.toLocaleString()} | DPM: ${p.dpm.toLocaleString()} | 딜교환 효율: ${p.dealRatio}
+
+[골드]
+획득: ${p.gold.toLocaleString()} | 소비: ${p.goldSpent.toLocaleString()}
+
+[CS]
+총 CS: ${p.cs} (미니언: ${p.minionsKilled} / 정글: ${p.jungleKilled}) | CS/분: ${p.csPerMin}
+
+[오브젝트 기여]
+타워 킬: ${p.turretKills} | 억제기 킬: ${p.inhibitorKills}
+
+[시야 / 와드]
+시야 점수: ${p.vision} | 시야점수/분: ${p.visionPerMin}
+와드 설치: ${p.wardsPlaced} | 제어와드 설치: ${p.detectorWardsPlaced} | 와드 제거: ${p.wardsKilled}
+제어와드 구매: ${p.controlWardsBought}
+`;
+    }
+  }
+
+  /* 전체 참여자 한 줄 요약 (중복 섹션 제거 — 이 한 줄만 사용) */
+  const allParticipantStr = Object.entries(pMap).map(([id,p]) =>
+`P${id} | ${p.team} | ${p.name} | ${p.champion} | ${p.position} | Lv.${p.level} | KDA: ${p.kills}/${p.deaths}/${p.assists}(${((p.kills+p.assists)/Math.max(p.deaths,1)).toFixed(2)}) | KP: ${p.kp} | CS: ${p.cs}(${p.csPerMin}/분) | 골드: ${p.gold.toLocaleString()} | 챔피언 피해: ${p.dmgToChamp.toLocaleString()} | DPM: ${p.dpm.toLocaleString()} | 딜교환: ${p.dealRatio} | 받은 피해: ${p.dmgTaken.toLocaleString()} | 시야: ${p.vision}(${p.visionPerMin}/분) | 와드설치: ${p.wardsPlaced} | 와드제거: ${p.wardsKilled} | 제어와드구매: ${p.controlWardsBought} | 타워킬: ${p.turretKills} | 억제기킬: ${p.inhibitorKills} | 더블: ${p.doubleKills} 트리플: ${p.tripleKills} 쿼드라: ${p.quadraKills} 펜타: ${p.pentaKills} | 아이템: [${p.items.join(',')}] | 결과: ${p.win?'승리':'패배'}`
+  ).join('\n');
+
+  matchText =
+`[매치 기본정보: ${matchId}]
+게임 모드: ${gameMode}
+게임 시간: ${durationStr}
+패치 버전: ${gameVersion}
+${mySection}
+=== 라인 매치업 ===
+${matchupStr}
+
+=== 밴 정보 ===
+블루팀 밴: ${blueBans}
+레드팀 밴: ${redBans}
+
+=== 팀 오브젝트 현황 ===
+${teamStr}
+
+=== 전체 참여자 스탯 ===
+${allParticipantStr}
+`;
+
+  /* ── 2. 타임라인 조회 ── */
+  setProg(50);
+  setStatus('타임라인 조회 중...');
+  let tl;
+  try {
+    const res = await fetch(`${base}/lol/match/v5/matches/${matchId}/timeline?api_key=${apiKey}`);
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(`HTTP ${res.status}: ${e?.status?.message||'오류'}`); }
+    tl = await res.json();
+  } catch(e) { setStatus('타임라인 조회 실패: ' + e.message, 'error'); btn.disabled=false; setProg(0); return; }
+
+  setProg(70);
+  setStatus('타임라인 파싱 및 핵심 지표 계산 중...');
+
+  const frames = tl?.info?.frames || [];
+  const kills=[], buildings=[], monsters=[], specialKills=[], dragonSoul=[];
+  const goldFrames=[];
+
+  /* 핵심 지표 추적용 */
+  const firstCoreItem = {};   // pid → {ts, itemId, itemName}
+  const trinketSwitch = {};   // pid → {ts, from, to}
+  const botPlatesBefore14 = { blue: 0, red: 0, myCount: 0 };
+  const myDeaths = [];        // {ts, x, y, zone, killerLabel, assists}
+  const phaseKDA = { laning: { k:0, d:0, a:0 }, mid: { k:0, d:0, a:0 }, late: { k:0, d:0, a:0 } };
+
+  frames.forEach(frame => {
+    const minLabel = Math.floor(frame.timestamp / 60000);
+    const pf = frame.participantFrames || {};
+    const snap = { min: minLabel, players: {} };
+    for (let i = 1; i <= 10; i++) {
+      if (pf[i]) snap.players[i] = {
+        gold: pf[i].totalGold,
+        cs: pf[i].minionsKilled + pf[i].jungleMinionsKilled,
+        level: pf[i].level,
+        dmgToChamp: pf[i].damageStats?.totalDamageDoneToChampions || 0,
+        currentGold: pf[i].currentGold,
+      };
+    }
+    goldFrames.push(snap);
+
+    (frame.events||[]).forEach(ev => {
+      const ts = fmt(ev.timestamp);
+      const msec = ev.timestamp;
+
+      if (ev.type === 'CHAMPION_KILL') {
+        const zone = classifyZone(ev.position?.x, ev.position?.y, myPid ? pMap[myPid].teamId : null);
+        kills.push({
+          ts, msec, killer: ev.killerId, victim: ev.victimId,
+          assists: ev.assistingParticipantIds||[],
+          bounty: ev.bounty, shutdownBounty: ev.shutdownBounty||0,
+          x: ev.position?.x, y: ev.position?.y, zone
+        });
+        /* 내 사망 기록 및 구간별 KDA */
+        if (myPid) {
+          const min = Math.floor(ev.timestamp / 60000);
+          const phase = min < 14 ? 'laning' : (min < 25 ? 'mid' : 'late');
+          if (ev.killerId === myPid) phaseKDA[phase].k++;
+          if (ev.victimId === myPid) phaseKDA[phase].d++;
+          if ((ev.assistingParticipantIds||[]).includes(myPid)) phaseKDA[phase].a++;
+
+          if (ev.victimId === myPid) {
+            myDeaths.push({
+              ts, zone,
+              killerLabel: pLabel(ev.killerId),
+              assists: (ev.assistingParticipantIds||[]).map(a=>pLabel(a))
+            });
+          }
+        }
+
+      } else if (ev.type === 'BUILDING_KILL') {
+        buildings.push({ ts, killer: ev.killerId, buildingType: ev.buildingType, laneType: ev.laneType, teamId: ev.teamId, towerType: ev.towerType||'' });
+
+      } else if (ev.type === 'ELITE_MONSTER_KILL') {
+        monsters.push({ ts, msec, killer: ev.killerId, monsterType: ev.monsterType, monsterSubType: ev.monsterSubType||'' });
+
+      } else if (ev.type === 'CHAMPION_SPECIAL_KILL') {
+        specialKills.push({ ts, pid: ev.killerId, killType: ev.killType, assists: ev.assistingParticipantIds||[], x: ev.position?.x, y: ev.position?.y });
+
+      } else if (ev.type === 'DRAGON_SOUL_GIVEN') {
+        dragonSoul.push({ ts, teamId: ev.teamId, name: ev.name });
+
+      } else if (ev.type === 'ITEM_PURCHASED') {
+        const pid = ev.participantId;
+        const itemId = ev.itemId;
+        /* 1코어 아이템 감지 */
+        if (isCoreItem(itemId) && !firstCoreItem[pid]) {
+          firstCoreItem[pid] = { ts, itemId, itemName: CORE_ITEMS[itemId] };
+        }
+        /* 트링킷 교체 감지: 노란(3340) → 파시트(3363) or 렌즈(3364) */
+        if ((itemId === TRINKET_BLUE || itemId === TRINKET_RED) && !trinketSwitch[pid]) {
+          trinketSwitch[pid] = { ts, to: itemId === TRINKET_BLUE ? '파시트 얼터레이션(렌즈)' : '파시트 얼터레이션(레드)' };
+        }
+
+      } else if (ev.type === 'TURRET_PLATE_DESTROYED') {
+        /* 14분 이전 봇 플레이트 */
+        if (ev.timestamp < 14 * 60000 && ev.laneType === 'BOT_LANE') {
+          if (ev.teamId === 100) botPlatesBefore14.blue++;
+          else botPlatesBefore14.red++;
+          if (myPid && ev.killerId === myPid) botPlatesBefore14.myCount++;
+        }
+      }
+    });
+  });
+
+  setProg(85);
+
+  /* ── 킬 텍스트 (구역 포함) ── */
+  const killsStr = kills.map(k => {
+    const assistStr = k.assists.length > 0 ? ` | 어시: ${k.assists.map(a=>pLabel(a)).join(', ')}` : '';
+    return `[${k.ts}] KILL | ${pLabel(k.killer)} → ${pLabel(k.victim)}${assistStr} | 현상금: ${k.bounty} | 셧다운: ${k.shutdownBounty} | 구역: ${k.zone}`;
+  }).join('\n');
+
+  /* ── 스페셜 킬 ── */
+  const specialKillsStr = specialKills.map(k => {
+    const assistStr = k.assists.length > 0 ? ` | 어시: ${k.assists.map(a=>pLabel(a)).join(', ')}` : '';
+    return `[${k.ts}] SPECIAL_KILL | ${pLabel(k.pid)} | 종류: ${k.killType}${assistStr}`;
+  }).join('\n');
+
+  /* ── 건물 파괴 ── */
+  const buildStr = buildings.map(b =>
+    `[${b.ts}] TOWER | 파괴된팀: ${b.teamId===100?'블루':'레드'} | killer: ${pLabel(b.killer)} | 라인: ${b.laneType} | 종류: ${b.towerType||b.buildingType}`
+  ).join('\n');
+
+  /* ── 오브젝트 ── */
+  const monsterStr = monsters.map(m =>
+    `[${m.ts}] MONSTER | ${pLabel(m.killer)} | ${m.monsterType}${m.monsterSubType?' / '+m.monsterSubType:''}`
+  ).join('\n');
+
+  /* ── 드래곤 소울 ── */
+  const dragonSoulStr = dragonSoul.map(d =>
+    `[${d.ts}] DRAGON_SOUL | 팀: ${d.teamId===100?'블루':'레드'} | 종류: ${d.name}`
+  ).join('\n');
+
+  /* ── 핵심 지표 요약 ── */
+  /* 1코어 아이템 타이밍 */
+  const coreItemStr = Object.entries(firstCoreItem).map(([pid, info]) =>
+    `P${pid}(${pMap[pid]?.name||'?'}/${pMap[pid]?.champion||'?'}): ${info.itemName} → ${info.ts} 완성`
+  ).join('\n') || '해당 없음';
+
+  /* 트링킷 교체 타이밍 */
+  const trinketStr = Object.entries(trinketSwitch).map(([pid, info]) =>
+    `P${pid}(${pMap[pid]?.name||'?'}/${pMap[pid]?.champion||'?'}): ${info.to} → ${info.ts} 교체`
+  ).join('\n') || '교체 없음';
+
+  /* 14분 이전 봇 플레이트 */
+  const myPidInfo = myPid ? pMap[myPid] : null;
+  const plateSummary =
+`블루팀 획득: ${botPlatesBefore14.blue}개 | 레드팀 획득: ${botPlatesBefore14.red}개` +
+(myPidInfo ? ` | ${myPidInfo.name} 직접 획득: ${botPlatesBefore14.myCount}개` : '');
+
+  /* 내 사망 구역 분류 */
+  const myDeathStr = myDeaths.length > 0
+    ? myDeaths.map((d,i) => `  데스${i+1} [${d.ts}] 구역: ${d.zone} | killer: ${d.killerLabel}${d.assists.length?' | 어시: '+d.assists.join(', '):''}`)
+              .join('\n')
+    : '  없음';
+
+
+  /* 10분/15분 포지션 간 골드 차 자동 계산 */
+  function getGoldDiff(min) {
+    const snap = goldFrames.find(g => g.min === min);
+    if (!snap) return `[${min}분] 데이터 없음`;
+    let lines = posOrder.map(pos => {
+      const bP = Object.entries(pMap).find(([,p]) => p.teamId===100 && p.position===pos);
+      const rP = Object.entries(pMap).find(([,p]) => p.teamId===200 && p.position===pos);
+      if (!bP || !rP) return null;
+      const bGold = snap.players[bP[0]]?.gold || 0;
+      const rGold = snap.players[rP[0]]?.gold || 0;
+      const diff = bGold - rGold;
+      const diffStr = diff >= 0 ? `블루 +${diff.toLocaleString()}` : `레드 +${(-diff).toLocaleString()}`;
+      return `${posLabel[pos]}: ${diffStr}`;
+    }).filter(Boolean);
+    return `[${min}분 포지션별 골드 차이]\n  ` + lines.join(' | ');
+  }
+  const goldDiff10 = getGoldDiff(10);
+  const goldDiff15 = getGoldDiff(15);
+
+  /* 오브젝트 시점 ±30초 참여 여부 교차 분석 */
+  const objectAnalysis = [];
+  if (myPid) {
+    monsters.forEach(m => {
+      const objTs = m.msec;
+      const nearbyKills = kills.filter(k => Math.abs(k.msec - objTs) <= 30000);
+      let myInvolvement = false;
+      let fightKills = 0, fightDeaths = 0, fightAssists = 0;
+      
+      nearbyKills.forEach(k => {
+        if (k.killer === myPid) { myInvolvement = true; fightKills++; }
+        if (k.victim === myPid) { myInvolvement = true; fightDeaths++; }
+        if (k.assists.includes(myPid)) { myInvolvement = true; fightAssists++; }
+      });
+      
+      let involvedStr = myInvolvement ? `교전 참여 (내 KDA: ${fightKills}/${fightDeaths}/${fightAssists})` : `교전 미참여 (내 KDA 변동 없음)`;
+      if (m.killer === myPid) involvedStr += ` + 오브젝트 직접 처치`;
+      
+      const mName = m.monsterSubType ? `${m.monsterType}(${m.monsterSubType})` : m.monsterType;
+      objectAnalysis.push(`[${m.ts}] ${mName} 처치 시점(±30초): ${involvedStr}`);
+    });
+  }
+  const objectAnalysisStr = objectAnalysis.join('\n');
+
+  /* ── 5분 단위 골드 스냅샷 ── */
+  const SNAP_MINS = new Set([0,5,10,14,15,20,25,30,35,40]);
+  const maxMin = Math.max(...goldFrames.map(g=>g.min));
+  SNAP_MINS.add(maxMin);
+
+  const goldStr = goldFrames
+    .filter(g => SNAP_MINS.has(g.min))
+    .map(g => {
+      const blueTotal = [1,2,3,4,5].reduce((s,i)=>s+(g.players[i]?.gold||0),0);
+      const redTotal  = [6,7,8,9,10].reduce((s,i)=>s+(g.players[i]?.gold||0),0);
+      const diff = blueTotal - redTotal;
+      const diffStr = diff >= 0 ? `+${diff.toLocaleString()}` : diff.toLocaleString();
+      /* 개인별 골드/CS/레벨 */
+      const playerSnap = Object.entries(g.players).map(([id,p]) =>
+        `  P${id}(${pMap[id]?.champion||'?'})[${pMap[id]?.team||'?'}]: gold=${p.gold.toLocaleString()} cs=${p.cs} lv=${p.level} dmg=${p.dmgToChamp.toLocaleString()}`
+      ).join('\n');
+      return `[${String(g.min).padStart(2,'0')}분] 블루합=${blueTotal.toLocaleString()} / 레드합=${redTotal.toLocaleString()} / 차이=${diffStr}\n${playerSnap}`;
+    }).join('\n\n');
+
+  timelineText =
+`[타임라인 데이터: ${matchId}]
+총 게임시간: ${durationStr}
+
+=== 핵심 지표 요약 ===
+
+${goldDiff10}
+${goldDiff15}
+
+[1코어 아이템 완성 타이밍]
+${coreItemStr}
+
+[트링킷 교체 타이밍 (노란 → 파시트/렌즈)]
+${trinketStr}
+
+[봇 라인 14분 이전 포탑 플레이트 획득]
+${plateSummary}
+
+${myPidInfo ? `[내 구간별 KDA] 라인전(0~14분): ${phaseKDA.laning.k}/${phaseKDA.laning.d}/${phaseKDA.laning.a} | 중반(14~25분): ${phaseKDA.mid.k}/${phaseKDA.mid.d}/${phaseKDA.mid.a} | 후반(25분~): ${phaseKDA.late.k}/${phaseKDA.late.d}/${phaseKDA.late.a}\n` : ''}
+${myPidInfo ? `[내 사망 구역 분류 — ${myPidInfo.name}(${myPidInfo.champion}) 총 ${myDeaths.length}회]\n${myDeathStr}\n` : ''}
+${myPidInfo ? `=== 오브젝트 시점(±30초) 교전 참여 여부 ===\n${objectAnalysisStr||'해당 없음'}\n\n` : ''}
+=== 킬 이벤트 (총 ${kills.length}개) ===
+${killsStr||'없음'}
+
+=== 스페셜 킬 이벤트 (총 ${specialKills.length}개) ===
+${specialKillsStr||'없음'}
+
+=== 건물 파괴 이벤트 (총 ${buildings.length}개) ===
+${buildStr||'없음'}
+
+=== 오브젝트 처치 이벤트 (총 ${monsters.length}개) ===
+${monsterStr||'없음'}
+
+=== 드래곤 소울 (총 ${dragonSoul.length}개) ===
+${dragonSoulStr||'없음'}
+
+=== 골드 & 플레이어 스냅샷 (5분 단위) ===
+${goldStr}
+`;
+
+  fullText = matchText + '\n\n' + timelineText;
+
+  setProg(100);
+  setStatus(
+    `완료! 킬 ${kills.length} / 타워 ${buildings.length} / 오브젝트 ${monsters.length} / ${frames.length}분 분량 ` +
+    `| 총 ${fullText.length.toLocaleString()}자`,
+    'success'
+  );
+
+  const preview = document.getElementById('preview');
+  preview.style.display = 'block';
+  document.getElementById('prevtitle').style.display = 'block';
+  preview.textContent = fullText.slice(0, 1200) + `\n\n... (매치정보 ${matchText.length.toLocaleString()}자 / 타임라인 ${timelineText.length.toLocaleString()}자 / 전체 ${fullText.length.toLocaleString()}자)`;
+
+  ['copyMatchBtn','copyTimelineBtn','copyAllBtn'].forEach(id => document.getElementById(id).style.display = 'block');
+  btn.disabled = false;
+}
+
+async function copyText(text, btnId) {
+  if (!text) { alert('먼저 추출을 실행하세요.'); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById(btnId);
+    const orig = btn.textContent;
+    btn.textContent = '복사 완료!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  } catch(e) { alert('복사 실패: ' + e.message); }
+}
+</script>
+</body>
+</html>
