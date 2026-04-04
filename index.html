@@ -159,7 +159,7 @@
   <div class="parsed-id" id="parsedId"></div>
   <div class="url-hint">지원 형식: your.gg URL · op.gg URL · KR_xxxxxxx 형식 직접 입력</div>
 
-  <label>API Key</label>
+  <label>LOL API Key</label>
   <input type="text" id="apiKey" placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
 
   <label>내 소환사명 (입력하면 내 상세 정보 및 핵심 지표 별도 정리)</label>
@@ -168,7 +168,7 @@
   <button class="primary" id="btn" onclick="run()">추출하기</button>
 
   <div class="progress"><div class="progress-fill" id="prog"></div></div>
-  <div class="status" id="status">URL 또는 Match ID와 API Key를 입력하고 버튼을 누르세요.</div>
+  <div class="status" id="status">URL 또는 Match ID와 LOL API Key를 입력하고 버튼을 누르세요.</div>
 
   <div class="section-title" id="ptitle">참여자 목록</div>
   <table class="participant-table" id="ptable">
@@ -196,7 +196,7 @@
     <div class="step"><div class="step-num">1</div><div>your.gg 또는 op.gg 매치 URL을 그대로 붙여넣기</div></div>
     <div class="step"><div class="step-num">2</div><div>추출 완료 후 원하는 버튼으로 복사</div></div>
     <div class="step"><div class="step-num">3</div><div>Claude 채팅에 붙여넣기 후 <strong>"위 데이터 분석해줘"</strong></div></div>
-    <div class="step"><div class="step-num">*</div><div>개발용 API Key는 <strong>24시간마다 갱신</strong> 필요 (developer.riotgames.com)</div></div>
+    <div class="step"><div class="step-num">*</div><div>개발용 LOL API Key는 <strong>24시간마다 갱신</strong> 필요 (developer.riotgames.com)</div></div>
   </div>
 
   <hr class="divider">
@@ -334,7 +334,7 @@ async function run() {
 
   const matchId = parseMatchId(raw);
   if (!matchId) { setStatus('URL 또는 Match ID를 인식할 수 없습니다.', 'error'); return; }
-  if (!apiKey)  { setStatus('API Key를 입력하세요.', 'error'); return; }
+  if (!apiKey)  { setStatus('LOL API Key를 입력하세요.', 'error'); return; }
 
   btn.disabled = true;
   ['copyMatchBtn','copyTimelineBtn','copyAllBtn'].forEach(id => document.getElementById(id).style.display = 'none');
