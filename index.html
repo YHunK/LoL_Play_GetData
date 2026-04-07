@@ -301,6 +301,76 @@ function classifyZone(x, y, myTeamId) {
   return '정글 (중립)';
 }
 
+/* ── 드래곤 세부 종류 (API monsterSubType → 한국어 공식 명칭) ── */
+const DRAGON_KR = {
+  // 원소 드래곤
+  AIR_DRAGON:       '바람의 드래곤',    // Cloud Drake
+  FIRE_DRAGON:      '화염의 드래곤',    // Infernal Drake
+  WATER_DRAGON:     '바다의 드래곤',    // Ocean Drake
+  EARTH_DRAGON:     '대지의 드래곤',    // Mountain Drake
+  // 공학 드래곤
+  HEXTECH_DRAGON:   '마법공학 드래곤',  // Hextech Drake
+  CHEMTECH_DRAGON:  '화학공학 드래곤',  // Chemtech Drake
+  // 기타
+  ICE_DRAGON:       '얼음의 드래곤',    // Glacial Drake (24시즌 이후)
+  PARTY_DRAGON:     '파티 드래곤',      // 이벤트성 드래곤
+  ELDER_DRAGON:     '장로 드래곤',      // Elder Dragon
+};
+function dragonKr(sub) { return DRAGON_KR[sub] || sub; }
+	
+/* ── 드래곤 소울 (DRAGON_SOUL_GIVEN 이벤트 name 필드 → 한국어) ── */
+const SOUL_KR = {
+  Hextech:   '마법공학 소울',
+  Chemtech:  '화학공학 소울',
+  Infernal:  '화염 소울',
+  Mountain:  '대지 소울',
+  Ocean:     '바다 소울',
+  Cloud:     '바람 소울',
+  Ice:       '얼음 소울',
+};
+function soulKr(name) { return SOUL_KR[name] || name + ' 소울'; }
+	
+/* ── 에픽 몬스터 타입 (API monsterType + monsterSubType → 한국어) ── */
+const MONSTER_KR = {
+  DRAGON:       '드래곤',
+  BARON_NASHOR: '바론 내셔',
+  RIFTHERALD:   '협곡의 전령',
+  HORDE:        '공허 유충',
+  RIFTSCUTTLER: '바위 게',
+};
+/* 정글 버프 몬스터 */
+const JUNGLE_BUFF_KR = {
+  BLUE_GOLEM:    '푸른 파수꾼 (블루 버프)',
+  RED_BRAMBLEBACK: '붉은 덩굴 정령 (레드 버프)',
+};
+function monsterKr(type, sub) {
+  if (type === 'DRAGON' && sub) return dragonKr(sub);
+  if (JUNGLE_BUFF_KR[type]) return JUNGLE_BUFF_KR[type];
+  return MONSTER_KR[type] || type;
+}
+	
+/* 포탑·건물 종류 */
+const TOWER_TYPE_KR = {
+  OUTER_TURRET:        '1차 포탑',
+  INNER_TURRET:        '2차 포탑',
+  BASE_TURRET:         '억제기 포탑',
+  NEXUS_TURRET:        '넥서스 포탑',
+  INHIBITOR_BUILDING:  '억제기',
+  UNDEFINED:           '포탑',
+};
+function towerKr(towerType, buildingType) {
+  return TOWER_TYPE_KR[towerType] || TOWER_TYPE_KR[buildingType] || towerType || buildingType;
+}
+	
+/* 라인 종류 */
+const LANE_KR = {
+  TOP_LANE:    '탑 라인',
+  MID_LANE:    '미드 라인',
+  BOT_LANE:    '바텀 라인',
+  JUNGLE:      '정글',
+};
+function laneKr(lane) { return LANE_KR[lane] || lane; }
+
 /* ── 코어 아이템 완성 판단 ── */
 const CORE_ITEMS = {
   // ─── 신발류 ───
@@ -798,7 +868,7 @@ async function run() {
 
   /* 라인 매치업 */
   const posOrder = ['TOP','JUNGLE','MIDDLE','BOTTOM','UTILITY'];
-  const posLabel = { TOP:'TOP', JUNGLE:'JG', MIDDLE:'MID', BOTTOM:'BOT', UTILITY:'SUP' };
+  const posLabel = { TOP:'탑', JUNGLE:'정글', MIDDLE:'미드', BOTTOM:'원딜', UTILITY:'서포터' };
   let blueLineScore = 0, redLineScore = 0;
   const matchupLines = posOrder.map(pos => {
     const bE = Object.entries(pMap).find(([,p]) => p.teamId===100 && p.position===pos);
@@ -1083,7 +1153,7 @@ ${allParticipantStr}
   /* ── 스페셜 킬 ── */
   const specialKillsStr = specialKills.map(k => {
     const assistStr = k.assists.length > 0 ? ` | 어시: ${k.assists.map(a=>pLabel(a)).join(', ')}` : '';
-    return `[${k.ts}] SPECIAL_KILL | ${pLabel(k.pid)} | 종류: ${k.killType}${assistStr}`;
+    return `[${k.ts}] 특수킬 | ${pLabel(k.pid)} | 종류: ${k.killType}${assistStr}`;
   }).join('\n');
 
   /* ── 건물 파괴 ── */
@@ -1093,12 +1163,12 @@ ${allParticipantStr}
 
   /* ── 오브젝트 ── */
   const monsterStr = monsters.map(m =>
-    `[${m.ts}] MONSTER | ${pLabel(m.killer)} | ${m.monsterType}${m.monsterSubType?' / '+m.monsterSubType:''}`
+    `[${m.ts}] 오브젝트 | ${pLabel(m.killer)} | ${monsterKr(m.monsterType, m.monsterSubType)}`
   ).join('\n');
 
   /* ── 드래곤 소울 ── */
   const dragonSoulStr = dragonSoul.map(d =>
-    `[${d.ts}] DRAGON_SOUL | 팀: ${d.teamId===100?'블루':'레드'} | 종류: ${d.name}`
+    `[${d.ts}] 드래곤 소울 획득 | 팀: ${d.teamId===100?'블루':'레드'} | 종류: ${soulKr(d.name)}`
   ).join('\n');
 
   /* ── 핵심 지표 요약 ── */
@@ -1170,7 +1240,7 @@ ${allParticipantStr}
         : `교전 미참여 (내 KDA 변동 없음)`;
       if (m.killer === myPid) involvedStr += ` + 오브젝트 직접 처치`;
 	  
-      const mName = m.monsterSubType ? `${m.monsterType}(${m.monsterSubType})` : m.monsterType;
+      const mName = monsterKr(m.monsterType, m.monsterSubType);
       objectAnalysis.push(`[${m.ts}] ${mName} 처치 시점(±30초): ${involvedStr}`);
     });
   }
