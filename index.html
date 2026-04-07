@@ -551,6 +551,87 @@ const CORE_ITEMS = {
   8010:'흡혈 저주',
   4402:'활력 부여 자물쇠'
 };
+ 
+/* 완성형 아이템 이름 테이블 (1코어 판정 대상만 포함) */
+const LEGENDARY_ITEM_NAMES = {
+  // 탑
+  3071:'칠흑의 양날 도끼', 3078:'삼위일체', 3053:'스테락의 도전',
+  3072:'피바라기', 3075:'가시 갑옷', 3083:'워모그 갑옷', 3084:'심장강철',
+  3161:'쇼진의 창', 3181:'선체파괴자', 3193:'석상 방어판',
+  3748:'거대한 히드라', 4014:'얼어붙은 망치', 6333:'죽음의 무도',
+  6630:'피에 굶주린 히드라', 6631:'발걸음 분쇄기', 6632:'신성한 파괴자',
+  6610:'갈라진 하늘', 6662:'빙결 건틀릿', 6665:'잭쇼, 변신자',
+  // 어쌔신
+  3142:'유미의 유령검', 3156:'맬모셔스의 아귀', 3157:'존야의 모래시계',
+  3814:'밤의 끝', 6691:'드락타르의 황혼검', 6692:'이클립스',
+  6693:'자객의 발톱', 6694:'세릴다의 원한', 6695:'뱀의 어금니',
+  6696:'공리의 활', 6697:'오만', 6698:'불경한 히드라',
+  6699:'번개 싸이클로소드', 6701:'기회', 2517:'끝없는 갈망',
+  // 원거리 딜러
+  3031:'무한의 대검', 3032:'윤 탈 야생화살', 3033:'필멸자의 운명',
+  3036:'도미닉 경의 인사', 3046:'유령 무희', 3085:'루난의 허리케인',
+  3087:'스태틱의 단검', 3094:'고속 연사포', 3097:'폭풍갈퀴',
+  3124:'구인수의 격노검', 3139:'헤르메스의 시미터', 3153:'몰락한 왕의 검',
+  3302:'최후의 경계', 6035:'은빛 여명', 6671:'게일포스',
+  6672:'크라켄 학살자', 6673:'불멸의 철갑궁', 6675:'나보리 명멸검',
+  6676:'수집가', 3508:'정수 약탈자',
+  // 마법사
+  3089:'라바돈의 죽음모자', 3100:'리치베인', 3102:'밴시의 장막',
+  3115:'내셔의 이빨', 3116:'라일라이의 수정 홀', 3118:'악의',
+  3121:'핌불윈터', 3135:'공허의 지팡이', 3137:'암호꽃 버섯',
+  3152:'공학 마법 로켓벨트', 3165:'모렐로노미콘', 4401:'대자연의 힘',
+  4628:'지평선의 초점', 4629:'우주 항로', 4633:'균열 제조기',
+  4637:'악마의 포옹', 4644:'산산조각난 여왕의 왕관', 4645:'그림자 불꽃',
+  4646:'폭풍 급습', 6653:'리안드리의 고통', 6655:'루덴의 폭풍',
+		6656:'영원한 겨울', 6657:'영겁의 지팡이',
+  // 탱커
+  3065:'정령의 형상', 3068:'태양불꽃 방패', 3073:'실험적 마공학판',
+  3074:'굶주린 히드라', 3109:'기사의 맹세', 3110:'얼어붙은 심장',
+  3143:'란두인의 예언', 3190:'강철 태양의 부적', 3222:'미카엘의 축복',
+  4403:'황금 주걱', 6664:'공허의 복사', 6667:'빛나는 미덕',
+  2501:'지배자의 피갑옷', 2502:'끝없는 절망', 2503:'검은불꽃 횃불',
+  2504:'카에닉 루케른', 8020:'심연의 가면', 8001:'저주받은 사슬',
+  // 서포터 완성형
+  3001:'이브쉬라우드', 3002:'선구자', 3050:'지크의 융합',
+  3107:'구원', 3504:'열의의 향로',
+  3865:'세계 지도집', 3866:'룬 나침반', 3867:'세계의 풍요',
+  3869:'천체 정렬', 3870:'꿈의 창조자', 3871:'작작의 영역 뾰족창',
+  3876:'동지의 썰매', 3877:'핏빛 노래',
+  4005:'제국의 명령', 6616:'흐르는 물의 지팡이', 6617:'달빛 재생자',
+  6620:'헬리아의 메아리', 6621:'새벽의 핵심',
+  2065:'슈렐리아의 전투 노래',
+  // 기타 전설
+  3026:'수호 천사', 3039:'아트마의 분노', 3041:'메자이의 영혼약탈자',
+  3091:'마법사의 최후', 3146:'공학 마법 총검',
+  6609:'화공 펑크 사슬검', 8010:'흡혈 저주', 4402:'활력 부여 자물쇠',
+  3003:'대천사의 지팡이', 3004:'마나무네',
+  3040:'대천사의 포옹', 3042:'무라마나',
+};
+/* 제외 목록: 소모품 / 도란 / 기본 부품 / 중간 부품 / 신발 / 트링킷 / 서포터 시작 아이템 */
+const EXCLUDE_FROM_CORE = new Set([
+  // 소모품
+  2003, 2031, 2033, 2055, 2138, 2139, 2140,
+  // 시작 아이템 (도란 계열 포함)
+  1054, 1055, 1056, 1082, 1083,
+  // 기본 부품
+  1001, 1004, 1006, 1011, 1018, 1026, 1027, 1028, 1029,
+  1031, 1033, 1036, 1037, 1038, 1042, 1043, 1052, 1053, 1057, 1058,
+  // 중간 부품 / 준완성 아이템
+  3012, 3024, 3044, 3051, 3057, 3066, 3067, 3070, 3076, 3077,
+  3082, 3086, 3108, 3113, 3114, 3119, 3123, 3131, 3133, 3134,
+  3140, 3144, 3145, 3147, 3155, 3179, 3211, 3430, 3513,
+  3801, 3802, 3803, 3916, 4630, 4632, 4635,
+  6029, 6660, 6670, 6677, 6690,
+  // 신발 (완성형 포함 — 1코어 판정에서 제외)
+  3006, 3009, 3020, 3047, 3111, 3117, 3158,
+  // 트링킷
+  3340, 3363, 3364,
+  // 서포터 낮은 단계 시작 아이템
+  3850, 3851, 3853, 3854, 3855, 3857, 3858, 3859, 3860, 3862, 3863, 3864,
+]);
+ 
+function isLegendaryItem(id) { return !EXCLUDE_FROM_CORE.has(id) && !!LEGENDARY_ITEM_NAMES[id]; }
+function itemName(id) { return LEGENDARY_ITEM_NAMES[id] || `아이템ID:${id}`; }
 function isCoreItem(id) { return !!CORE_ITEMS[id]; }
 
 /* ── 트링킷 ID ── */
@@ -798,8 +879,6 @@ async function run() {
 게임 시간: ${durationStr}
 패치 버전: ${gameVersion}
 ${mySection}
-=== 라인 매치업 ===
-${matchupStr}
 
 === 밴 정보 ===
 블루팀 밴: ${blueBans}
@@ -831,15 +910,19 @@ ${allParticipantStr}
 
   /* 핵심 지표 추적용 */
   const firstCoreItem = {};   // pid → {ts, itemId, itemName}
-  const trinketSwitch = {};   // pid → {ts, from, to}
+  const trinketSwitch = {};   // pid → {ts, to}
   const botPlatesBefore14 = { blue: 0, red: 0, myCount: 0 };
   const myDeaths = [];        // {ts, x, y, zone, killerLabel, assists}
   const phaseKDA = { laning: { k:0, d:0, a:0 }, mid: { k:0, d:0, a:0 }, late: { k:0, d:0, a:0 } };
+  const myDeaths = [];
+
+  /* [FIX 1] 셧다운 골드 손실 합산 변수 */
+  let myShutdownLoss = 0;
 
   frames.forEach(frame => {
     const minLabel = Math.floor(frame.timestamp / 60000);
     const pf = frame.participantFrames || {};
-    const snap = { min: minLabel, players: {} };
+    const snap = { min: minLabel, ts: frame.timestamp, players: {} };
     for (let i = 1; i <= 10; i++) {
       if (pf[i]) snap.players[i] = {
         gold: pf[i].totalGold,
@@ -856,7 +939,7 @@ ${allParticipantStr}
       const msec = ev.timestamp;
 
       if (ev.type === 'CHAMPION_KILL') {
-        const zone = classifyZone(ev.position?.x, ev.position?.y, myPid ? pMap[myPid].teamId : null);
+        const zone = classifyZone(ev.position?.x, ev.position?.y, myPid ? pMap[myPid]?.teamId : null);
         kills.push({
           ts, msec, killer: ev.killerId, victim: ev.victimId,
           assists: ev.assistingParticipantIds||[],
@@ -868,16 +951,18 @@ ${allParticipantStr}
           const min = Math.floor(ev.timestamp / 60000);
           const phase = min < 14 ? 'laning' : (min < 25 ? 'mid' : 'late');
           if (ev.killerId === myPid) phaseKDA[phase].k++;
-          if (ev.victimId === myPid) phaseKDA[phase].d++;
-          if ((ev.assistingParticipantIds||[]).includes(myPid)) phaseKDA[phase].a++;
-
           if (ev.victimId === myPid) {
+            phaseKDA[phase].d++;
+            /* [FIX 1] 내가 죽을 때 셧다운 골드 손실 합산 */
+            myShutdownLoss += (ev.shutdownBounty || 0);
             myDeaths.push({
               ts, zone,
               killerLabel: pLabel(ev.killerId),
-              assists: (ev.assistingParticipantIds||[]).map(a=>pLabel(a))
+              assists: (ev.assistingParticipantIds||[]).map(a=>pLabel(a)),
+              shutdownLost: ev.shutdownBounty || 0,
             });
           }
+          if ((ev.assistingParticipantIds||[]).includes(myPid)) phaseKDA[phase].a++;
         }
 
       } else if (ev.type === 'BUILDING_KILL') {
@@ -894,28 +979,100 @@ ${allParticipantStr}
 
       } else if (ev.type === 'ITEM_PURCHASED') {
         const pid = ev.participantId;
-        const itemId = ev.itemId;
-        /* 1코어 아이템 감지 */
-        if (isCoreItem(itemId) && !firstCoreItem[pid]) {
-          firstCoreItem[pid] = { ts, itemId, itemName: CORE_ITEMS[itemId] };
+        /* [FIX 2] P0 필터링 — participantId가 0이거나 pMap에 없으면 건너뜀 */
+        if (!pid || !pMap[pid]) return;
+
+        const iid = ev.itemId;
+
+        /* [FIX 1] 1코어 아이템 감지: 완성형 전설 아이템만 판정 */
+        if (isLegendaryItem(iid) && !firstCoreItem[pid]) {
+          firstCoreItem[pid] = { ts, itemId: iid, itemName: itemName(iid) };
         }
-        /* 트링킷 교체 감지: 노란(3340) → 파시트(3363) or 렌즈(3364) */
-        if ((itemId === TRINKET_BLUE || itemId === TRINKET_RED) && !trinketSwitch[pid]) {
-          trinketSwitch[pid] = { ts, to: itemId === TRINKET_BLUE ? '파시트 얼터레이션(렌즈)' : '파시트 얼터레이션(레드)' };
+
+        /* 트링킷 교체 감지 */
+        if ((iid === TRINKET_BLUE || iid === TRINKET_RED) && !trinketSwitch[pid]) {
+          trinketSwitch[pid] = {
+            ts,
+            to: iid === TRINKET_BLUE ? '파시트 얼터레이션(렌즈)' : '파시트 얼터레이션(레드)'
+          };
         }
 
       } else if (ev.type === 'TURRET_PLATE_DESTROYED') {
-        /* 14분 이전 봇 플레이트 */
+        /*
+         * [FIX 3] 봇 플레이트 방향 수정
+         * ev.teamId = 플레이트가 파괴된(소유한) 팀
+         * 따라서 상대 팀이 골드를 획득한 것이므로 방향을 반전
+         *   ev.teamId === 100 (블루팀 포탑 파괴) → 레드팀이 획득
+         *   ev.teamId === 200 (레드팀 포탑 파괴) → 블루팀이 획득
+         */
         if (ev.timestamp < 14 * 60000 && ev.laneType === 'BOT_LANE') {
-          if (ev.teamId === 100) botPlatesBefore14.blue++;
-          else botPlatesBefore14.red++;
-          if (myPid && ev.killerId === myPid) botPlatesBefore14.myCount++;
+          if (ev.teamId === 100) {
+            botPlatesBefore14.red++;   // 블루팀 포탑 파괴 → 레드팀 획득
+          } else {
+            botPlatesBefore14.blue++;  // 레드팀 포탑 파괴 → 블루팀 획득
+          }
+          /* 내가 직접 파괴 + 내 팀이 획득하는 경우 (상대 포탑 파괴) */
+          if (myPid && ev.killerId === myPid && ev.teamId !== pMap[myPid]?.teamId) {
+            botPlatesBefore14.myCount++;
+          }
         }
       }
     });
   });
 
   setProg(85);
+
+  /* ────────────────────────────────────────────────
+     [FIX 4] 골드 스냅샷 중복 프레임 방지
+     - 같은 분(minute)에 복수의 프레임이 있으면 타임스탬프가 가장 큰 것(마지막)만 유지
+  ──────────────────────────────────────────────── */
+  const SNAP_MINS = new Set([0,5,10,14,15,20,25,30,35,40]);
+  const maxMin = Math.max(...goldFrames.map(g=>g.min));
+  SNAP_MINS.add(maxMin);
+
+  /* 분(min) 기준으로 마지막 프레임만 남기기 */
+  const latestFrameByMin = {};
+  goldFrames.forEach(g => {
+    if (!latestFrameByMin[g.min] || g.ts > latestFrameByMin[g.min].ts) {
+      latestFrameByMin[g.min] = g;
+    }
+  });
+  const dedupedFrames = Object.values(latestFrameByMin).sort((a,b)=>a.min-b.min);
+
+  /* 14분 스냅샷 기반 라인 매치업 점수 계산 */
+  const snap14 = latestFrameByMin[14] || latestFrameByMin[15] || null;
+  let blueLineScore = 0, redLineScore = 0;
+  const matchupLines = posOrder.map(pos => {
+    const bE = Object.entries(pMap).find(([,p]) => p.teamId===100 && p.position===pos);
+    const rE = Object.entries(pMap).find(([,p]) => p.teamId===200 && p.position===pos);
+    if (!bE || !rE) return `${posLabel[pos]||pos}: 매치업 불명확`;
+    const [bPid, b] = bE;
+    const [rPid, r] = rE;
+
+    let ba = 5, ra = 5;
+    if (snap14) {
+      const bGold = snap14.players[bPid]?.gold || 0;
+      const rGold = snap14.players[rPid]?.gold || 0;
+      const bCs   = snap14.players[bPid]?.cs   || 0;
+      const rCs   = snap14.players[rPid]?.cs   || 0;
+      const goldTotal = bGold + rGold;
+      const csTotal   = bCs + rCs;
+      let blueRatio = 0, cnt = 0;
+      if (goldTotal > 0) { blueRatio += bGold / goldTotal; cnt++; }
+      if (csTotal   > 0) { blueRatio += bCs   / csTotal;   cnt++; }
+      ba = cnt > 0 ? Math.round(blueRatio / cnt * 10) : 5;
+      ra = 10 - ba;
+    }
+    blueLineScore += ba; redLineScore += ra;
+    return `${posLabel[pos]||pos}: ${b.name}(${b.champion}) [${ba}] vs ${r.name}(${r.champion}) [${ra}]`;
+  });
+  const matchupStr = matchupLines.join('\n') + `\n팀 라인 우위 합산: 블루 ${blueLineScore} vs 레드 ${redLineScore}`;
+
+  /* 라인 매치업을 matchText에 삽입 */
+  matchText = matchText.replace(
+    '=== 밴 정보 ===',
+    `=== 라인 매치업 (14분 스냅샷 기준) ===\n${matchupStr}\n\n=== 밴 정보 ===`
+  );
 
   /* ── 킬 텍스트 (구역 포함) ── */
   const killsStr = kills.map(k => {
@@ -946,33 +1103,40 @@ ${allParticipantStr}
 
   /* ── 핵심 지표 요약 ── */
   /* 1코어 아이템 타이밍 */
-  const coreItemStr = Object.entries(firstCoreItem).map(([pid, info]) =>
-    `P${pid}(${pMap[pid]?.name||'?'}/${pMap[pid]?.champion||'?'}): ${info.itemName} → ${info.ts} 완성`
-  ).join('\n') || '해당 없음';
+								   
+  const coreItemStr = Object.entries(firstCoreItem)
+    .filter(([pid]) => parseInt(pid) > 0 && pMap[parseInt(pid)])
+    .map(([pid, info]) =>
+      `P${pid}(${pMap[pid]?.name||'?'}/${pMap[pid]?.champion||'?'}): ${info.itemName} → ${info.ts} 완성`
+    ).join('\n') || '감지된 완성형 코어 없음';
 
-  /* 트링킷 교체 타이밍 */
-  const trinketStr = Object.entries(trinketSwitch).map(([pid, info]) =>
-    `P${pid}(${pMap[pid]?.name||'?'}/${pMap[pid]?.champion||'?'}): ${info.to} → ${info.ts} 교체`
-  ).join('\n') || '교체 없음';
+  /* ── 트링킷 교체 ── */
+  const trinketStr = Object.entries(trinketSwitch)
+    .filter(([pid]) => parseInt(pid) > 0 && pMap[parseInt(pid)])
+    .map(([pid, info]) =>
+      `P${pid}(${pMap[pid]?.name||'?'}/${pMap[pid]?.champion||'?'}): ${info.to} → ${info.ts} 교체`
+    ).join('\n') || '교체 없음';
 
-  /* 14분 이전 봇 플레이트 */
+  /* ── 봇 플레이트 (수정된 방향) ── */
   const myPidInfo = myPid ? pMap[myPid] : null;
   const plateSummary =
-`블루팀 획득: ${botPlatesBefore14.blue}개 | 레드팀 획득: ${botPlatesBefore14.red}개` +
-(myPidInfo ? ` | ${myPidInfo.name} 직접 획득: ${botPlatesBefore14.myCount}개` : '');
+    `블루팀 획득: ${botPlatesBefore14.blue}개 | 레드팀 획득: ${botPlatesBefore14.red}개` +
+    (myPidInfo ? ` | ${myPidInfo.name} 직접 획득: ${botPlatesBefore14.myCount}개` : '');
 
-  /* 내 사망 구역 분류 */
+  /* ── 내 사망 구역 분류 (셧다운 손실 포함) ── */
   const myDeathStr = myDeaths.length > 0
-    ? myDeaths.map((d,i) => `  데스${i+1} [${d.ts}] 구역: ${d.zone} | killer: ${d.killerLabel}${d.assists.length?' | 어시: '+d.assists.join(', '):''}`)
-              .join('\n')
+    ? myDeaths.map((d,i) =>
+        `  데스${i+1} [${d.ts}] 구역: ${d.zone} | killer: ${d.killerLabel}` +
+        (d.assists.length ? ` | 어시: ${d.assists.join(', ')}` : '') +
+        (d.shutdownLost > 0 ? ` | 셧다운 손실: ${d.shutdownLost}g` : '')
+      ).join('\n')
     : '  없음';
 
-
-  /* 10분/15분 포지션 간 골드 차 자동 계산 */
+  /* ── 10/15분 포지션별 골드 차 ── */
   function getGoldDiff(min) {
-    const snap = goldFrames.find(g => g.min === min);
+    const snap = latestFrameByMin[min];
     if (!snap) return `[${min}분] 데이터 없음`;
-    let lines = posOrder.map(pos => {
+    const lines = posOrder.map(pos => {
       const bP = Object.entries(pMap).find(([,p]) => p.teamId===100 && p.position===pos);
       const rP = Object.entries(pMap).find(([,p]) => p.teamId===200 && p.position===pos);
       if (!bP || !rP) return null;
@@ -987,7 +1151,7 @@ ${allParticipantStr}
   const goldDiff10 = getGoldDiff(10);
   const goldDiff15 = getGoldDiff(15);
 
-  /* 오브젝트 시점 ±30초 참여 여부 교차 분석 */
+  /* ── 오브젝트 시점 ±30초 참여 여부 ── */
   const objectAnalysis = [];
   if (myPid) {
     monsters.forEach(m => {
@@ -995,35 +1159,32 @@ ${allParticipantStr}
       const nearbyKills = kills.filter(k => Math.abs(k.msec - objTs) <= 30000);
       let myInvolvement = false;
       let fightKills = 0, fightDeaths = 0, fightAssists = 0;
-      
+	  
       nearbyKills.forEach(k => {
-        if (k.killer === myPid) { myInvolvement = true; fightKills++; }
-        if (k.victim === myPid) { myInvolvement = true; fightDeaths++; }
-        if (k.assists.includes(myPid)) { myInvolvement = true; fightAssists++; }
+        if (k.killer === myPid)             { myInvolvement = true; fightKills++; }
+        if (k.victim === myPid)             { myInvolvement = true; fightDeaths++; }
+        if (k.assists.includes(myPid))      { myInvolvement = true; fightAssists++; }
       });
-      
-      let involvedStr = myInvolvement ? `교전 참여 (내 KDA: ${fightKills}/${fightDeaths}/${fightAssists})` : `교전 미참여 (내 KDA 변동 없음)`;
+      let involvedStr = myInvolvement
+        ? `교전 참여 (내 KDA: ${fightKills}/${fightDeaths}/${fightAssists})`
+        : `교전 미참여 (내 KDA 변동 없음)`;
       if (m.killer === myPid) involvedStr += ` + 오브젝트 직접 처치`;
-      
+	  
       const mName = m.monsterSubType ? `${m.monsterType}(${m.monsterSubType})` : m.monsterType;
       objectAnalysis.push(`[${m.ts}] ${mName} 처치 시점(±30초): ${involvedStr}`);
     });
   }
   const objectAnalysisStr = objectAnalysis.join('\n');
 
-  /* ── 5분 단위 골드 스냅샷 ── */
-  const SNAP_MINS = new Set([0,5,10,14,15,20,25,30,35,40]);
-  const maxMin = Math.max(...goldFrames.map(g=>g.min));
-  SNAP_MINS.add(maxMin);
-
-  const goldStr = goldFrames
+  /* ── 5분 단위 골드 스냅샷 (중복 제거 후) ── */
+  const goldStr = dedupedFrames
     .filter(g => SNAP_MINS.has(g.min))
     .map(g => {
       const blueTotal = [1,2,3,4,5].reduce((s,i)=>s+(g.players[i]?.gold||0),0);
       const redTotal  = [6,7,8,9,10].reduce((s,i)=>s+(g.players[i]?.gold||0),0);
       const diff = blueTotal - redTotal;
       const diffStr = diff >= 0 ? `+${diff.toLocaleString()}` : diff.toLocaleString();
-      /* 개인별 골드/CS/레벨 */
+									  
       const playerSnap = Object.entries(g.players).map(([id,p]) =>
         `  P${id}(${pMap[id]?.champion||'?'})[${pMap[id]?.team||'?'}]: gold=${p.gold.toLocaleString()} cs=${p.cs} lv=${p.level} dmg=${p.dmgToChamp.toLocaleString()}`
       ).join('\n');
@@ -1048,6 +1209,7 @@ ${trinketStr}
 [봇 라인 14분 이전 포탑 플레이트 획득]
 ${plateSummary}
 
+${myPidInfo ? `[내 셧다운 골드 손실 합산] 총 ${myShutdownLoss.toLocaleString()}g\n` : ''}
 ${myPidInfo ? `[내 구간별 KDA] 라인전(0~14분): ${phaseKDA.laning.k}/${phaseKDA.laning.d}/${phaseKDA.laning.a} | 중반(14~25분): ${phaseKDA.mid.k}/${phaseKDA.mid.d}/${phaseKDA.mid.a} | 후반(25분~): ${phaseKDA.late.k}/${phaseKDA.late.d}/${phaseKDA.late.a}\n` : ''}
 ${myPidInfo ? `[내 사망 구역 분류 — ${myPidInfo.name}(${myPidInfo.champion}) 총 ${myDeaths.length}회]\n${myDeathStr}\n` : ''}
 ${myPidInfo ? `=== 오브젝트 시점(±30초) 교전 참여 여부 ===\n${objectAnalysisStr||'해당 없음'}\n\n` : ''}
