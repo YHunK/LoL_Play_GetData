@@ -869,7 +869,6 @@ async function run() {
   /* 라인 매치업 */
   const posOrder = ['TOP','JUNGLE','MIDDLE','BOTTOM','UTILITY'];
   const posLabel = { TOP:'탑', JUNGLE:'정글', MIDDLE:'미드', BOTTOM:'원딜', UTILITY:'서포터' };
-  let blueLineScore = 0, redLineScore = 0;
   const matchupLines = posOrder.map(pos => {
     const bE = Object.entries(pMap).find(([,p]) => p.teamId===100 && p.position===pos);
     const rE = Object.entries(pMap).find(([,p]) => p.teamId===200 && p.position===pos);
