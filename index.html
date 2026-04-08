@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Riot 타임라인 추출기 v4</title>
+<title>Riot 타임라인 추출기 v5</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -828,6 +828,22 @@ async function run() {
       kp: '-',
       dpm: Math.round(p.totalDamageDealtToChampions / (gameDuration/60)),
       dealRatio: p.totalDamageTaken > 0 ? (p.totalDamageDealtToChampions / p.totalDamageTaken).toFixed(2) : 'N/A',
+      /* ── 역할 분기 지원 추가 필드 ── */
+      totalHeal: p.totalHeal || 0,
+      healsOnTeammates: p.totalHealsOnTeammates || 0,
+      shieldsOnTeammates: p.totalDamageShieldedOnTeammates || 0,
+      selfMitigated: p.damageSelfMitigated || 0,
+      ccTime: p.totalTimeCCDealt || 0,
+      dmgToTurrets: p.damageDealtToTurrets || 0,
+      dmgToObjectives: p.damageDealtToObjectives || 0,
+      spell1Casts: p.spell1Casts || 0,
+      spell2Casts: p.spell2Casts || 0,
+      spell3Casts: p.spell3Casts || 0,
+      spell4Casts: p.spell4Casts || 0,
+      longestAlive: p.longestTimeSpentLiving || 0,
+      totalDeadTime: p.totalTimeSpentDead || 0,
+      objectivesStolen: p.objectivesStolen || 0,
+      turretTakedowns: p.turretTakedowns || 0,
     };
   });
 
@@ -908,19 +924,32 @@ async function run() {
 총 CS: ${p.cs} (미니언: ${p.minionsKilled} / 정글: ${p.jungleKilled}) | CS/분: ${p.csPerMin}
 
 [오브젝트 기여]
-타워 킬: ${p.turretKills} | 억제기 킬: ${p.inhibitorKills}
+타워 킬: ${p.turretKills} | 타워 관여: ${p.turretTakedowns} | 억제기 킬: ${p.inhibitorKills}
+포탑 피해량: ${p.dmgToTurrets.toLocaleString()} | 오브젝트 피해량: ${p.dmgToObjectives.toLocaleString()}
+오브젝트 스틸: ${p.objectivesStolen}회
 
 [시야 / 와드]
 시야 점수: ${p.vision} | 시야점수/분: ${p.visionPerMin}
 와드 설치: ${p.wardsPlaced} | 제어와드 설치: ${p.detectorWardsPlaced} | 와드 제거: ${p.wardsKilled}
 제어와드 구매: ${p.controlWardsBought}
+
+[생존 / 전투 패턴]
+최장 생존 시간: ${p.longestAlive}초 | 총 사망 시간: ${p.totalDeadTime}초
+CC 기여 시간: ${p.ccTime}초
+
+[힐 / 실드 / 경감 — 역할 분기 지표]
+자신 힐량: ${p.totalHeal.toLocaleString()} | 아군 힐량: ${p.healsOnTeammates.toLocaleString()}
+아군 실드량: ${p.shieldsOnTeammates.toLocaleString()} | 피해 경감량: ${p.selfMitigated.toLocaleString()}
+
+[스킬 사용 횟수]
+Q: ${p.spell1Casts}회 | W: ${p.spell2Casts}회 | E: ${p.spell3Casts}회 | R: ${p.spell4Casts}회
 `;
     }
   }
 
   /* 전체 참여자 한 줄 요약 (중복 섹션 제거 — 이 한 줄만 사용) */
   const allParticipantStr = Object.entries(pMap).map(([id,p]) =>
-`P${id} | ${p.team} | ${p.name} | ${p.champion} | ${p.position} | Lv.${p.level} | KDA: ${p.kills}/${p.deaths}/${p.assists}(${((p.kills+p.assists)/Math.max(p.deaths,1)).toFixed(2)}) | KP: ${p.kp} | CS: ${p.cs}(${p.csPerMin}/분) | 골드: ${p.gold.toLocaleString()} | 챔피언 피해: ${p.dmgToChamp.toLocaleString()} | DPM: ${p.dpm.toLocaleString()} | 딜교환: ${p.dealRatio} | 받은 피해: ${p.dmgTaken.toLocaleString()} | 시야: ${p.vision}(${p.visionPerMin}/분) | 와드설치: ${p.wardsPlaced} | 와드제거: ${p.wardsKilled} | 제어와드구매: ${p.controlWardsBought} | 타워킬: ${p.turretKills} | 억제기킬: ${p.inhibitorKills} | 더블: ${p.doubleKills} 트리플: ${p.tripleKills} 쿼드라: ${p.quadraKills} 펜타: ${p.pentaKills} | 아이템: [${p.items.join(',')}] | 결과: ${p.win?'승리':'패배'}`
+`P${id} | ${p.team} | ${p.name} | ${p.champion} | ${p.position} | Lv.${p.level} | KDA: ${p.kills}/${p.deaths}/${p.assists}(${((p.kills+p.assists)/Math.max(p.deaths,1)).toFixed(2)}) | KP: ${p.kp} | CS: ${p.cs}(${p.csPerMin}/분) | 골드: ${p.gold.toLocaleString()} | 챔피언 피해: ${p.dmgToChamp.toLocaleString()} | DPM: ${p.dpm.toLocaleString()} | 딜교환: ${p.dealRatio} | 받은 피해: ${p.dmgTaken.toLocaleString()} | 피해 경감: ${p.selfMitigated.toLocaleString()} | 포탑 피해: ${p.dmgToTurrets.toLocaleString()} | 오브젝트 피해: ${p.dmgToObjectives.toLocaleString()} | CC 기여: ${p.ccTime}초 | 아군 힐: ${p.healsOnTeammates.toLocaleString()} | 아군 실드: ${p.shieldsOnTeammates.toLocaleString()} | 시야: ${p.vision}(${p.visionPerMin}/분) | 와드설치: ${p.wardsPlaced} | 와드제거: ${p.wardsKilled} | 제어와드구매: ${p.controlWardsBought} | 타워킬: ${p.turretKills} | 타워관여: ${p.turretTakedowns} | 억제기킬: ${p.inhibitorKills} | 오브젝트스틸: ${p.objectivesStolen} | 스킬사용(Q/W/E/R): ${p.spell1Casts}/${p.spell2Casts}/${p.spell3Casts}/${p.spell4Casts} | 더블: ${p.doubleKills} 트리플: ${p.tripleKills} 쿼드라: ${p.quadraKills} 펜타: ${p.pentaKills} | 아이템: [${p.items.join(',')}] | 결과: ${p.win?'승리':'패배'}`
   ).join('\n');
 
   matchText =
@@ -1137,7 +1166,7 @@ ${allParticipantStr}
 
   /* ── 건물 파괴 ── */
   const buildStr = buildings.map(b =>
-    `[${b.ts}] TOWER | 파괴된팀: ${b.teamId===100?'블루':'레드'} | killer: ${pLabel(b.killer)} | 라인: ${b.laneType} | 종류: ${b.towerType||b.buildingType}`
+    `[${b.ts}] 건물파괴 | 파괴된팀: ${b.teamId===100?'블루':'레드'} | 처치: ${pLabel(b.killer)} | 라인: ${laneKr(b.laneType)} | 종류: ${towerKr(b.towerType, b.buildingType)}`
   ).join('\n');
 
   /* ── 오브젝트 ── */
@@ -1265,7 +1294,7 @@ ${myPidInfo ? `=== 오브젝트 시점(±30초) 교전 참여 여부 ===\n${obje
 === 킬 이벤트 (총 ${kills.length}개) ===
 ${killsStr||'없음'}
 
-=== 스페셜 킬 이벤트 (총 ${specialKills.length}개) ===
+=== 특수 킬 이벤트 (총 ${specialKills.length}개) ===
 ${specialKillsStr||'없음'}
 
 === 건물 파괴 이벤트 (총 ${buildings.length}개) ===
