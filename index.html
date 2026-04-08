@@ -869,25 +869,6 @@ async function run() {
   /* 라인 매치업 */
   const posOrder = ['TOP','JUNGLE','MIDDLE','BOTTOM','UTILITY'];
   const posLabel = { TOP:'탑', JUNGLE:'정글', MIDDLE:'미드', BOTTOM:'원딜', UTILITY:'서포터' };
-  const matchupLines = posOrder.map(pos => {
-    const bE = Object.entries(pMap).find(([,p]) => p.teamId===100 && p.position===pos);
-    const rE = Object.entries(pMap).find(([,p]) => p.teamId===200 && p.position===pos);
-    if (!bE || !rE) return `${posLabel[pos]||pos}: 매치업 불명확`;
-    const b = bE[1], r = rE[1];
-    const metrics = [
-      [b.gold, r.gold],
-      [b.cs, r.cs],
-      [b.dmgToChamp, r.dmgToChamp],
-      [b.kills + b.assists, r.kills + r.assists],
-    ];
-    let blueRatio = 0, cnt = 0;
-    metrics.forEach(([bv,rv]) => { const t=bv+rv; if(t>0){blueRatio+=bv/t;cnt++;} });
-    const ba = cnt > 0 ? Math.round(blueRatio/cnt*10) : 5;
-    const ra = 10 - ba;
-    blueLineScore += ba; redLineScore += ra;
-    return `${posLabel[pos]||pos}: ${b.name}(${b.champion}) [${ba}] vs ${r.name}(${r.champion}) [${ra}]`;
-  });
-  const matchupStr = matchupLines.join('\n') + `\n팀 라인 우위 합산: 블루 ${blueLineScore} vs 레드 ${redLineScore}`;
 
   /* 밴 정보 — 챔피언 이름 변환 */
   const blueBans = (blueTeam.bans||[]).map(b=> b.championId === -1 ? `없음(픽순서:${b.pickTurn})` : `${champName(b.championId)}(픽순서:${b.pickTurn})`).join(', ') || '없음';
